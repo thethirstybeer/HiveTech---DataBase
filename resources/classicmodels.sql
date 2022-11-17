@@ -85,7 +85,7 @@ order by count(o.customerNumber) desc
 limit 10;
 
 # No 18 liệt kê tất cả orderdetails của từng orders
-select * from orderdetails o
+select o.* from orderdetails o
 left join orders o2 on o2.orderNumber = o.orderNumber;
 
 # No 19 liệt kê tất cả orderdetails, order có productCode bắt đầu là S10
@@ -123,9 +123,9 @@ left join orders o on o.customerNumber = c.customerNumber
 where o.orderNumber is null ;
 
 # No 24 liệt kê orders, orderdetails theo từng customers
-select c.customerNumber , c.customerName , o.orderNumber  from customers c 
+select o.*, o2.*  from customers c 
 left join orders o on c.customerNumber = o.customerNumber 
-left join orderdetails o2 on o.orderNumber = o2.orderNumber 
+left join orderdetails o2 on o.orderNumber = o2.orderNumber ;
 
 # No 25 liệt kê customers tại USA có số lượng payment nhiều nhất
 select c.customerNumber , c.customerName, count(p.customerNumber),c.country  from customers c 
@@ -136,16 +136,18 @@ order by count(p.customerNumber) desc
 limit 1;
 
 # No 26 liệt kê 3 customers có lượng amout it́ nhất
-select c.customerNumber , c.customerName , p.amount  from customers c
+select c.customerNumber , c.customerName , Sum(p.amount)  from customers c
 inner join payments p on c.customerNumber = p.customerNumber
-order by p.amount
+group by c.customerNumber 
+order by Sum(p.amount)
 limit 3;
 
 # No 27 liệt kê 5 products có số lượng payment nhiều nhất
 select c.customerNumber , c.customerName , count(p.customerNumber) from customers c
 inner join payments p ON c.customerNumber = p.customerNumber
-group by p.customerNumber
-
+group by p.customerNumber 
+order by count(p.customerNumber) desc
+limit 5;
 
 # No 28 liệt kê orders được thanh toán trong tháng 4-2003 & tháng 12-2003
 select * from orders o
@@ -157,7 +159,7 @@ select o.officeCode , count(c.salesRepEmployeeNumber) as countCustomer  from off
 inner join employees e on o.officeCode = e.officeCode
 inner join customers c on e.employeeNumber = c.salesRepEmployeeNumber 
 group by o.officeCode
-order by count(c.salesRepEmployeeNumber ) desc
+order by count(c.salesRepEmployeeNumber  ) desc
 limit 1;
 
 # No 30 liệt kê 2 customer có giới hạn tín dụng < 20000
@@ -171,10 +173,10 @@ order by p.quantityInStock desc
 limit 2;
 
 # No 32 liêt kê 10 products có giá thấp nhất & được nhiều KH chọn nhất
-select p.productCode , p.productName, p.MSRP, count(o.productCode)  from products p
+select p.productCode , p.productName, p.buyPrice , count(o.productCode)  from products p
 inner join orderdetails o on p.productCode = o.productCode
 group by p.productCode
-order by p.MSRP , count(o.productCode  ) desc
+order by p.buyPrice  , count(o.productCode  ) desc
 limit 10;
 
 # No 33 liệt kê 5 sản phẩm bị Cancelled nhất
@@ -187,26 +189,36 @@ order by count(o2.status ) desc
 limit 5;
 
 # No 34 liệt kê 5 sản phâm được giao hàng sớm nhất trong năm 2004
-select p.productCode, o.orderNumber, o2.orderNumber, o2.shippedDate  from products p 
+select p.productCode, o.orderNumber, o2.shippedDate  from products p 
 inner join orderdetails o on p.productCode = o.productCode
 inner join orders o2 on o.orderNumber = o2.orderNumber 
 where o2.shippedDate >= "2004-01-01" and o2.shippedDate <= "2004-12-30"
 limit 5;
 
 # No 35 tính tổng số tiền đã được thanh toán theo từng KH có payment trong năm 2004
-select c.customerNumber , c.customerName, sum(p.amount) totalAmount  from customers c
+select c.customerNumber , c.customerName, sum(p.amount) from customers c
 inner join payments p on c.customerNumber = p.customerNumber
-group by c.customerNumber;
+where p.paymentDate between "2004-01-01" and "2004-12-31"
+group by c.customerNumber  ;
 
 # No 36 tìm 2 employees bị báo cáo nhiều nhất
-
+select e.employeeNumber , count(e.employeeNumber) from employees e 
+inner join employees e2 on e.employeeNumber = e2.reportsTo 
+group by e.employeeNumber 
+order by count(e.employeeNumber) desc
+limit 2;
 
 # No 37 tìm 2 product ko được đặt hàng trong năm 2005 (Chưa xong)
-
+select p.* from products p 
+left join orderdetails o using (productCode)
+left join orders o2 using (orderNumber)
+where o2.orderDate not between "2005-01-1" and "2005-12-31"
+limit 2;
 
 # No 38 top 10 oder được ship tính từ thời gian orderDate ko quá 3 ngày
 select o.orderNumber , o.orderDate , o.shippedDate from orders o
-where date_sub(o.shippedDate, interval 3 day) = o.orderDate;
+where date_sub(o.shippedDate, interval 3 day) = o.orderDate
+limit 10;
 
 # No 39 tìm 10 oder dã được hoàn thành ship trong tháng 12-2004
 select *  from orders o
